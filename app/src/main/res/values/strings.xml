@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">NTN终端</string>
+    <string name="app_title">铱星 NTN 终端调试</string>
+    <string name="status_disconnected">状态：未连接</string>
+    <string name="status_value">状态：%1$s</string>
+    <string name="refresh_paired">刷新已配对</string>
+    <string name="connect">连接</string>
+    <string name="disconnect">断开</string>
+    <string name="open_bt_settings">打开系统蓝牙设置（先完成配对）</string>
+    <string name="quick_queries">快捷命令</string>
+    <string name="query_version">查询版本</string>
+    <string name="query_status">查询状态</string>
+    <string name="query_gnss">查询 GNSS</string>
+    <string name="query_time">查询时间</string>
+    <string name="mode0">切换模式0</string>
+    <string name="mode1">切换模式1</string>
+    <string name="set_baud">设置RS232波特率</string>
+    <string name="local_at_hint">MCU命令，例如 AT+MCUCAP?</string>
+    <string name="send_mcu_at">发送 MCU AT</string>
+    <string name="ntn_at_hint">MS150命令，例如 AT+CSQ</string>
+    <string name="send_ntn_at">发送 NTN AT</string>
+    <string name="clear_log">清空日志</string>
+</resources>
