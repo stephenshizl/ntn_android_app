@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">NTN终端</string>
+    <string name="app_title">铱星 NTN 终端调试</string>
+    <string name="status_disconnected">状态：未连接</string>
+    <string name="status_value">状态：%1$s</string>
+    <string name="refresh_paired">刷新已配对</string>
+    <string name="connect">连接</string>
+    <string name="disconnect">断开</string>
+    <string name="open_bt_settings">打开系统蓝牙设置（先完成配对）</string>
+    <string name="quick_queries">快捷命令</string>
+    <string name="query_version">查询版本</string>
+    <string name="query_status">查询状态</string>
+    <string name="query_gnss">查询 GNSS</string>
+    <string name="query_time">查询时间</string>
+    <string name="mode0">切换模式0</string>
+    <string name="mode1">切换模式1</string>
+    <string name="set_baud">设置RS232波特率</string>
+    <string name="local_at_hint">MCU命令，例如 AT+MCUCAP?</string>
+    <string name="send_mcu_at">发送 MCU AT</string>
+    <string name="ntn_at_hint">MS150命令，例如 AT+CSQ</string>
+    <string name="send_ntn_at">发送 NTN AT</string>
+    <string name="clear_log">清空日志</string>
+    <string name="bt_not_supported">此手机不支持蓝牙</string>
+    <string name="no_paired_devices">无已配对设备，请先打开系统蓝牙设置</string>
+    <string name="paired_devices_count">已配对设备：%1$d</string>
+    <string name="unnamed_device">未命名设备</string>
+    <string name="pair_terminal_first">请先在系统设置中与 NTN-Terminal 配对</string>
+    <string name="select_valid_device">请选择有效设备</string>
+    <string name="bt_not_connected">尚未连接蓝牙终端</string>
+    <string name="command_empty">命令不能为空</string>
+    <string name="error_prefix">错误：%1$s</string>
+    <string name="log_tx">TX type=0x%1$02X id=%2$d  %3$s</string>
+    <string name="log_rx">RX %1$-13s id=%2$d len=%3$d\n%4$s</string>
+    <string name="bt_connecting">正在连接 %1$s…</string>
+    <string name="bt_connected">已连接 %1$s</string>
+    <string name="bt_connection_failed">连接失败：%1$s</string>
+    <string name="bt_disconnected">未连接</string>
+    <string name="bt_send_failed">发送失败：%1$s</string>
+</resources>

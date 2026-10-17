@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ public final class BluetoothSppClient {
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private final BluetoothAdapter adapter;
+    private final Context context;
     private final Callback callback;
     private final Object socketLock = new Object();
     private final ExecutorService connectExecutor = Executors.newSingleThreadExecutor();
@@ -34,7 +36,8 @@ public final class BluetoothSppClient {
     private volatile BluetoothSocket socket;
     private volatile OutputStream output;
 
-    public BluetoothSppClient(BluetoothAdapter adapter, Callback callback) {
+    public BluetoothSppClient(Context context, BluetoothAdapter adapter, Callback callback) {
+        this.context = context.getApplicationContext();
         this.adapter = adapter;
         this.callback = callback;
     }
@@ -43,7 +46,7 @@ public final class BluetoothSppClient {
     public void connect(BluetoothDevice device) {
         final int token = generation.incrementAndGet();
         closeSocket();
-        callback.onState("正在连接 " + safeName(device) + "…");
+        callback.onState(text(R.string.bt_connecting, safeName(device)));
         connectExecutor.execute(() -> runConnection(device, token));
     }
 
@@ -62,16 +65,16 @@ public final class BluetoothSppClient {
                 socket = newSocket;
                 output = newSocket.getOutputStream();
             }
-            callback.onState("已连接 " + safeName(device));
+            callback.onState(text(R.string.bt_connected, safeName(device)));
             readLoop(newSocket, token);
         } catch (IOException | SecurityException e) {
             if (token == generation.get()) {
-                callback.onError("连接失败：" + readableMessage(e));
+                callback.onError(text(R.string.bt_connection_failed, readableMessage(e)));
             }
         } finally {
             if (token == generation.get()) {
                 closeSocket();
-                callback.onState("未连接");
+                callback.onState(text(R.string.bt_disconnected));
             } else if (newSocket != null) {
                 try {
                     newSocket.close();
@@ -107,14 +110,14 @@ public final class BluetoothSppClient {
         writeExecutor.execute(() -> {
             synchronized (socketLock) {
                 if (token != generation.get() || output == null) {
-                    callback.onError("尚未连接蓝牙终端");
+                    callback.onError(text(R.string.bt_not_connected));
                     return;
                 }
                 try {
                     output.write(frame);
                     output.flush();
                 } catch (IOException e) {
-                    callback.onError("发送失败：" + readableMessage(e));
+                    callback.onError(text(R.string.bt_send_failed, readableMessage(e)));
                     disconnect();
                 }
             }
@@ -124,7 +127,7 @@ public final class BluetoothSppClient {
     public void disconnect() {
         generation.incrementAndGet();
         closeSocket();
-        callback.onState("未连接");
+        callback.onState(text(R.string.bt_disconnected));
     }
 
     public void close() {
@@ -159,5 +162,9 @@ public final class BluetoothSppClient {
 
     private static String readableMessage(Exception e) {
         return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+    }
+
+    private String text(int resourceId, Object... args) {
+        return context.getString(resourceId, args);
     }
 }

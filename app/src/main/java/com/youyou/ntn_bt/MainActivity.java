@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         BluetoothManager manager = getSystemService(BluetoothManager.class);
         bluetoothAdapter = manager == null ? null : manager.getAdapter();
         if (bluetoothAdapter != null) {
-            sppClient = new BluetoothSppClient(bluetoothAdapter, this);
+            sppClient = new BluetoothSppClient(this, bluetoothAdapter, this);
         }
 
         baudSpinner.setAdapter(new ArrayAdapter<>(this,
@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
 
     private void ensureBluetoothPermission() {
         if (bluetoothAdapter == null) {
-            appendLog("此手机不支持蓝牙");
+            appendLog(getString(R.string.bt_not_supported));
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -142,17 +142,17 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             labels.add(deviceLabel(device));
         }
         if (labels.isEmpty()) {
-            labels.add("无已配对设备，请先打开系统蓝牙设置");
+            labels.add(getString(R.string.no_paired_devices));
         }
         deviceSpinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, labels));
-        appendLog("已配对设备：" + pairedDevices.size());
+        appendLog(getString(R.string.paired_devices_count, pairedDevices.size()));
     }
 
     @SuppressLint("MissingPermission")
     private String deviceLabel(BluetoothDevice device) {
         String name = device.getName();
-        return (name == null || name.isEmpty() ? "未命名设备" : name)
+        return (name == null || name.isEmpty() ? getString(R.string.unnamed_device) : name)
                 + "  [" + device.getAddress() + "]";
     }
 
@@ -168,12 +168,12 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             return;
         }
         if (sppClient == null || pairedDevices.isEmpty()) {
-            appendLog("请先在系统设置中与 NTN-Terminal 配对");
+            appendLog(getString(R.string.pair_terminal_first));
             return;
         }
         int position = deviceSpinner.getSelectedItemPosition();
         if (position < 0 || position >= pairedDevices.size()) {
-            appendLog("请选择有效设备");
+            appendLog(getString(R.string.select_valid_device));
             return;
         }
         sppClient.connect(pairedDevices.get(position));
@@ -189,18 +189,18 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
 
     private void sendCommand(int type, String command) {
         if (sppClient == null || !sppClient.isConnected()) {
-            appendLog("尚未连接蓝牙终端");
+            appendLog(getString(R.string.bt_not_connected));
             return;
         }
         String clean = command == null ? "" : command.trim();
         if (clean.isEmpty()) {
-            appendLog("命令不能为空");
+            appendLog(getString(R.string.command_empty));
             return;
         }
         int requestId = allocateRequestId();
         byte[] payload = (clean + "\r\n").getBytes(StandardCharsets.US_ASCII);
         sppClient.send(Ctrl2Codec.encode(type, requestId, payload));
-        appendLog(String.format(Locale.US, "TX type=0x%02X id=%d  %s", type, requestId, clean));
+        appendLog(getString(R.string.log_tx, type, requestId, clean));
     }
 
     private int allocateRequestId() {
@@ -223,14 +223,13 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     @Override
     public void onFrame(Ctrl2Codec.Frame frame) {
         String text = new String(frame.payload, StandardCharsets.UTF_8);
-        runOnUiThread(() -> appendLog(String.format(Locale.US,
-                "RX %-13s id=%d len=%d%n%s",
+        runOnUiThread(() -> appendLog(getString(R.string.log_rx,
                 typeName(frame.type), frame.requestId, frame.payload.length, text)));
     }
 
     @Override
     public void onError(String message) {
-        runOnUiThread(() -> appendLog("错误：" + message));
+        runOnUiThread(() -> appendLog(getString(R.string.error_prefix, message)));
     }
 
     private static String typeName(int type) {
