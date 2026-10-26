@@ -6,13 +6,22 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import org.json.JSONObject;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.ScrollView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -48,6 +57,51 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private TextView logText;
     private EditText localCommandEdit;
     private EditText ntnCommandEdit;
+    private ScrollView logScroll;
+    private String connectedMac;
+    private int pendingName, pendingIdentity;
+    private long nameQueryAt;
+    private boolean namePoll;
+    private final BroadcastReceiver nameReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (BluetoothDevice.ACTION_NAME_CHANGED.equals(intent.getAction())) refreshPairedDevices();
+        }
+    };
+    private CheckBox gnssAutoRefresh;
+    private final Handler gnssHandler = new Handler(Looper.getMainLooper());
+    private GnssReading gnssReading;
+    private GnssReading.TimeReading timeReading;
+    private boolean gnssConnected, gnssForeground, timeAfterGnss;
+    private boolean gnssFailed, timeFailed;
+    private int pendingGnss, pendingTime;
+    private volatile int gnssEpoch;
+    private long gnssStarted, timeStarted, lastRefreshAt, gnssWallTime;
+    private static final long GNSS_REFRESH_MS = 5000L;
+    private static final long GNSS_TIMEOUT_MS = 7000L;
+    private final Runnable gnssTick = new Runnable() {
+        @Override public void run() {
+            long now = SystemClock.elapsedRealtime();
+            if (pendingGnss != 0 && now - gnssStarted >= GNSS_TIMEOUT_MS) {
+                pendingGnss = 0; gnssFailed = true; timeAfterGnss = false;
+                lastRefreshAt = now;
+            }
+            if (pendingTime != 0 && now - timeStarted >= GNSS_TIMEOUT_MS) {
+                pendingTime = 0; timeFailed = true; lastRefreshAt = now;
+            }
+            if (gnssConnected && gnssAutoRefresh.isChecked() && pendingGnss == 0
+                    && pendingTime == 0 && now - lastRefreshAt >= GNSS_REFRESH_MS) {
+                refreshTerminalGnss();
+            }
+            if (pendingName!=0 && now-nameQueryAt>=GNSS_TIMEOUT_MS) {
+                pendingName=0;namePoll=false;
+                gpsText(R.id.btNameStatus,getString(R.string.bt_name_failed));
+            }
+            if (gnssConnected && namePoll && pendingName==0 && now-nameQueryAt>=2000L)
+                sendLocal("AT+MCUBTNAME?");
+            renderGnss();
+            if (gnssForeground) gnssHandler.postDelayed(this, 1000L);
+        }
+    };
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -67,6 +121,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         statusText = findViewById(R.id.statusText);
         logText = findViewById(R.id.logText);
         logText.setMovementMethod(new ScrollingMovementMethod());
+        logScroll = findViewById(R.id.logScroll);
+        gnssAutoRefresh = findViewById(R.id.gnssAutoRefresh);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         baudSpinner = findViewById(R.id.baudSpinner);
         localCommandEdit = findViewById(R.id.localCommandEdit);
@@ -84,6 +140,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         baudSpinner.setSelection(4);
         bindActions();
         ensureBluetoothPermission();
+        renderGnss();
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_NAME_CHANGED);
+        if (Build.VERSION.SDK_INT>=33) registerReceiver(nameReceiver,filter,Context.RECEIVER_EXPORTED);
+        else registerReceiver(nameReceiver,filter);
     }
 
     private void bindActions() {
@@ -96,9 +156,20 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         });
         findViewById(R.id.bluetoothSettingsButton).setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)));
+        findViewById(R.id.btNameQueryButton).setOnClickListener(v -> {sendLocal("AT+MCUBTNAME?");sendLocal("AT+MCUBTIDENT?");});
+        findViewById(R.id.btNameSetButton).setOnClickListener(v -> {
+            String name=((EditText)findViewById(R.id.btNameEdit)).getText().toString();
+            if (!name.matches("[A-Za-z0-9_-]{1,31}")) {
+                ((EditText)findViewById(R.id.btNameEdit)).setError(getString(R.string.bt_name_validation));return;
+            }
+            sendLocal("AT+MCUBTNAME="+name);
+        });
+        findViewById(R.id.btNameAutoButton).setOnClickListener(v -> sendLocal("AT+MCUBTNAMEAUTO"));
+        findViewById(R.id.btNameRefreshButton).setOnClickListener(v -> {sendLocal("AT+MCUBTREFRESH");sendLocal("AT+MCUBTIDENT?");});
         findViewById(R.id.versionButton).setOnClickListener(v -> sendLocal("AT+MCUVER?"));
         findViewById(R.id.statusButton).setOnClickListener(v -> sendLocal("AT+MCUSTAT?"));
-        findViewById(R.id.gnssButton).setOnClickListener(v -> sendLocal("AT+MCUGNSS?"));
+        findViewById(R.id.gnssButton).setOnClickListener(v -> refreshTerminalGnss());
+        findViewById(R.id.gnssRefreshButton).setOnClickListener(v -> refreshTerminalGnss());
         findViewById(R.id.timeButton).setOnClickListener(v -> sendLocal("AT+MCUTIME?"));
         findViewById(R.id.mode0Button).setOnClickListener(v -> sendLocal("AT+MCUMODE=0"));
         findViewById(R.id.mode1Button).setOnClickListener(v -> sendLocal("AT+MCUMODE=1"));
@@ -133,6 +204,9 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         if (!hasConnectPermission()) {
             return;
         }
+        String selectedMac=null;
+        int selected=deviceSpinner.getSelectedItemPosition();
+        if (selected>=0 && selected<pairedDevices.size()) selectedMac=pairedDevices.get(selected).getAddress();
         pairedDevices.clear();
         Set<BluetoothDevice> bonded = bluetoothAdapter.getBondedDevices();
         pairedDevices.addAll(bonded);
@@ -146,6 +220,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         }
         deviceSpinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, labels));
+        for (int i=0;i<pairedDevices.size();i++)
+            if (pairedDevices.get(i).getAddress().equals(selectedMac)) deviceSpinner.setSelection(i);
         appendLog(getString(R.string.paired_devices_count, pairedDevices.size()));
     }
 
@@ -176,6 +252,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             appendLog(getString(R.string.select_valid_device));
             return;
         }
+        connectedMac=pairedDevices.get(position).getAddress();
         sppClient.connect(pairedDevices.get(position));
     }
 
@@ -187,20 +264,35 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         sendCommand(Ctrl2Codec.TYPE_NTN_REQUEST, command);
     }
 
-    private void sendCommand(int type, String command) {
+    private int sendCommand(int type, String command) {
         if (sppClient == null || !sppClient.isConnected()) {
             appendLog(getString(R.string.bt_not_connected));
-            return;
+            return 0;
         }
         String clean = command == null ? "" : command.trim();
         if (clean.isEmpty()) {
             appendLog(getString(R.string.command_empty));
-            return;
+            return 0;
         }
         int requestId = allocateRequestId();
+        long now = SystemClock.elapsedRealtime();
+        if (type==Ctrl2Codec.TYPE_LOCAL_REQUEST && (clean.startsWith("AT+MCUBTNAME") || clean.equals("AT+MCUBTREFRESH"))) {
+            pendingName=requestId;nameQueryAt=now;
+            gpsText(R.id.btNameStatus,getString(R.string.gnss_querying));
+        }
+        if (type==Ctrl2Codec.TYPE_LOCAL_REQUEST && clean.equals("AT+MCUBTIDENT?")) pendingIdentity=requestId;
+        if (type == Ctrl2Codec.TYPE_LOCAL_REQUEST) {
+            if (clean.equalsIgnoreCase("AT+MCUGNSS?") || clean.equalsIgnoreCase("AT+MCULOCATION?")) {
+                pendingGnss = requestId; gnssStarted = now; gnssReading = null; gnssFailed = false;
+            } else if (clean.equalsIgnoreCase("AT+MCUTIME?")) {
+                pendingTime = requestId; timeStarted = now; timeReading = null; timeFailed = false;
+            }
+        }
         byte[] payload = (clean + "\r\n").getBytes(StandardCharsets.US_ASCII);
         sppClient.send(Ctrl2Codec.encode(type, requestId, payload));
         appendLog(getString(R.string.log_tx, type, requestId, clean));
+        renderGnss();
+        return requestId;
     }
 
     private int allocateRequestId() {
@@ -214,17 +306,37 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
 
     @Override
     public void onState(String state) {
+        boolean connected = sppClient != null && sppClient.isConnected();
         runOnUiThread(() -> {
             statusText.setText(getString(R.string.status_value, state));
             appendLog(state);
+            gnssConnected = connected;
+            if (!connected) {
+                gnssEpoch++; pendingGnss = pendingTime = pendingName = pendingIdentity = 0;
+                namePoll=false;
+                gpsText(R.id.btNameStatus,getString(R.string.bt_name_disconnected));
+                gpsText(R.id.btNameValue,"");gpsText(R.id.btIdentityValue,"");
+                gnssReading = null; timeReading = null; gnssWallTime = 0;
+                gnssFailed = timeFailed = timeAfterGnss = false;
+            } else if (gnssForeground) {
+                refreshTerminalGnss();sendLocal("AT+MCUBTNAME?");sendLocal("AT+MCUBTIDENT?");
+            }
+            renderGnss();
         });
     }
 
     @Override
     public void onFrame(Ctrl2Codec.Frame frame) {
         String text = new String(frame.payload, StandardCharsets.UTF_8);
-        runOnUiThread(() -> appendLog(getString(R.string.log_rx,
-                typeName(frame.type), frame.requestId, frame.payload.length, text)));
+        int epoch = gnssEpoch;
+        runOnUiThread(() -> {
+            if (epoch != gnssEpoch || !gnssConnected) return;
+            appendLog(getString(R.string.log_rx,
+                    typeName(frame.type), frame.requestId, frame.payload.length, text));
+            if (frame.type == Ctrl2Codec.TYPE_LOCAL_FINAL) {
+                consumeGnss(frame.requestId, text);consumeName(frame.requestId,text);
+            }
+        });
     }
 
     @Override
@@ -254,15 +366,137 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private void appendLog(String message) {
         String time = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(new Date());
         logText.append(time + "  " + message + "\n");
-        View parent = (View) logText.getParent();
-        parent.post(() -> {
-            View scroll = (View) parent.getParent();
-            scroll.scrollTo(0, logText.getBottom());
-        });
+        if (logText.length() > 100000) {
+            logText.setText(logText.getText().subSequence(logText.length() - 80000, logText.length()));
+        }
+        logScroll.post(() -> logScroll.scrollTo(0, logText.getHeight()));
+    }
+
+    private void refreshTerminalGnss() {
+        if (pendingGnss != 0 || pendingTime != 0) return;
+        timeAfterGnss = true;
+        lastRefreshAt = SystemClock.elapsedRealtime();
+        if (sendCommand(Ctrl2Codec.TYPE_LOCAL_REQUEST, "AT+MCUGNSS?") == 0) timeAfterGnss = false;
+    }
+
+    private void consumeGnss(int requestId, String text) {
+        long now = SystemClock.elapsedRealtime();
+        if (requestId == pendingGnss && pendingGnss != 0) {
+            pendingGnss = 0;
+            try {
+                String value = responseValue(text, "+MCUGNSS:");
+                gnssReading = GnssReading.fromJson(value, now);
+                gnssWallTime = System.currentTimeMillis();
+                gnssFailed = false;
+            } catch (Exception error) {
+                gnssReading = null; gnssFailed = true;
+            }
+            if (timeAfterGnss && gnssConnected) {
+                timeAfterGnss = false;
+                sendLocal("AT+MCUTIME?");
+            }
+            lastRefreshAt = now;
+        } else if (requestId == pendingTime && pendingTime != 0) {
+            pendingTime = 0;
+            try {
+                timeReading = GnssReading.TimeReading.parse(responseValue(text, "+MCUTIME:"), now);
+                timeFailed = false;
+            } catch (Exception error) {
+                timeReading = null; timeFailed = true;
+            }
+            lastRefreshAt = now;
+        }
+        renderGnss();
+    }
+
+    private void consumeName(int requestId,String text) {
+        try {
+            if (requestId==pendingName && pendingName!=0) {
+                pendingName=0;
+                JSONObject data=new JSONObject(responseValue(text,"+MCUBTNAME:"));
+                String state=data.getString("state");
+                namePoll=!(state.equals("APPLIED") || state.equals("SAVE_FAILED") || state.equals("INVALID_NAME"));
+                gpsText(R.id.btNameStatus,data.getString("mode")+" · "+data.getString("source")+" · "+state+
+                    (state.equals("DEFERRED")?"\n"+getString(R.string.bt_name_deferred):""));
+                gpsText(R.id.btNameValue,getString(R.string.bt_name_values,data.getString("desired"),
+                    data.getString("applied"),data.getString("mac"),data.getInt("last_error")));
+            } else if (requestId==pendingIdentity && pendingIdentity!=0) {
+                pendingIdentity=0;
+                JSONObject data=new JSONObject(responseValue(text,"+MCUBTIDENT:"));
+                gpsText(R.id.btIdentityValue,getString(R.string.bt_name_identity,
+                    data.getString("terminal_sn"),data.getString("modem_sn"),data.getString("imei")));
+            }
+        } catch (Exception error) {
+            namePoll=false;gpsText(R.id.btNameStatus,getString(R.string.bt_name_failed));
+        }
+    }
+
+    private static String responseValue(String text, String prefix) {
+        if (!text.contains("\r\nOK\r\n")) throw new IllegalArgumentException("Query failed");
+        for (String line : text.split("[\r\n]+")) {
+            if (line.startsWith(prefix)) return line.substring(prefix.length());
+        }
+        throw new IllegalArgumentException("Response prefix missing");
+    }
+
+    private void gpsText(int id, String text) { ((TextView) findViewById(id)).setText(text); }
+    private String ageText(long age) {
+        return age == GnssReading.UNKNOWN_AGE ? "—" : String.format(Locale.US, "%.1f s", age / 1000.0);
+    }
+
+    private void renderGnss() {
+        long now = SystemClock.elapsedRealtime();
+        boolean connected = gnssConnected && sppClient != null && sppClient.isConnected();
+        GnssReading reading = connected ? gnssReading : null;
+        GnssReading.TimeReading time = connected ? timeReading : null;
+        boolean fresh = reading != null && reading.isFresh(now);
+        int status = R.string.gnss_not_queried;
+        if (!connected) status = R.string.gnss_disconnected;
+        else if (pendingGnss != 0) status = R.string.gnss_querying;
+        else if (gnssFailed) status = R.string.gnss_query_failed;
+        else if (reading != null) {
+            if (!reading.configured) status = R.string.gnss_not_configured;
+            else if (!reading.reportedValid) status = R.string.gnss_no_fix;
+            else if (!reading.hasCoordinates()) status = R.string.gnss_bad_data;
+            else status = fresh ? R.string.gnss_fixed : R.string.gnss_stale;
+        }
+        gpsText(R.id.gnssStatus, getString(status));
+        gpsText(R.id.gnssCoordinates, getString(R.string.gnss_coordinates,
+                fresh ? reading.latitude() : "—", fresh ? reading.longitude() : "—"));
+        gpsText(R.id.gnssSatellites, getString(R.string.gnss_satellites,
+                reading != null && reading.satellites >= 0 ? String.valueOf(reading.satellites) : "—",
+                reading != null && reading.fixQuality >= 0 ? String.valueOf(reading.fixQuality) : "—"));
+        gpsText(R.id.gnssConstellations, getString(R.string.gnss_constellations,
+                reading == null ? "—" : reading.constellations));
+        gpsText(R.id.gnssMotion, getString(R.string.gnss_motion,
+                fresh && reading.altitudeValid && reading.altitudeMm != null ? reading.altitude() : "—",
+                fresh && reading.speedCmS != null && reading.speedCmS >= 0 ? reading.speed() : "—"));
+        String utc = getString(R.string.gnss_time_unknown);
+        if (connected && pendingTime != 0) utc = getString(R.string.gnss_querying);
+        else if (connected && timeFailed) utc = getString(R.string.gnss_query_failed);
+        else if (time != null) utc = !time.valid ? getString(R.string.gnss_time_invalid)
+                : time.isFresh(now) ? time.utc : getString(R.string.gnss_stale);
+        gpsText(R.id.gnssUtc, getString(R.string.gnss_utc, utc));
+        gpsText(R.id.gnssAge, getString(R.string.gnss_age,
+                reading == null ? "—" : ageText(reading.currentAge(now)),
+                time == null ? "—" : ageText(time.currentAge(now))));
+        gpsText(R.id.gnssUpdated, getString(R.string.gnss_updated,
+                connected && gnssWallTime != 0 ? new SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                        .format(new Date(gnssWallTime)) : "—"));
+    }
+
+    @Override protected void onResume() {
+        super.onResume(); gnssForeground = true;
+        gnssHandler.removeCallbacks(gnssTick); gnssHandler.post(gnssTick);
+    }
+    @Override protected void onPause() {
+        gnssForeground = false; gnssHandler.removeCallbacks(gnssTick); super.onPause();
     }
 
     @Override
     protected void onDestroy() {
+        gnssForeground = false; gnssHandler.removeCallbacksAndMessages(null);
+        unregisterReceiver(nameReceiver);
         if (sppClient != null) {
             sppClient.close();
         }
