@@ -71,6 +71,10 @@
             android:layout_height="wrap_content"
             android:text="@string/open_bt_settings" />
 
+        <Button android:id="@+id/bluetoothOtaButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/ota_title" />
+
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="12dp" android:orientation="vertical"
             android:background="#EDF1FA" android:padding="12dp">

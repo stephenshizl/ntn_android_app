@@ -156,6 +156,14 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         });
         findViewById(R.id.bluetoothSettingsButton).setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)));
+        findViewById(R.id.bluetoothOtaButton).setOnClickListener(v ->
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle(R.string.ota_title).setMessage(R.string.ota_business_disconnect)
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .setPositiveButton(R.string.ota_open, (dialog, which) -> {
+                            if (sppClient != null) sppClient.disconnect();
+                            startActivity(new Intent(this, BluetoothOtaActivity.class));
+                        }).show());
         findViewById(R.id.btNameQueryButton).setOnClickListener(v -> {sendLocal("AT+MCUBTNAME?");sendLocal("AT+MCUBTIDENT?");});
         findViewById(R.id.btNameSetButton).setOnClickListener(v -> {
             String name=((EditText)findViewById(R.id.btNameEdit)).getText().toString();
