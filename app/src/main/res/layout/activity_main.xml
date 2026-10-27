@@ -1,4 +1,3 @@
-<?xml version='1.0' encoding='utf-8'?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/main" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:focusable="true" android:focusableInTouchMode="true" android:padding="16dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
@@ -49,32 +48,32 @@
             <Button android:id="@+id/sendNtnButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/send_ntn_at" />
             <TextView android:id="@+id/ntnResultText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" android:text="@string/ntn_result_idle" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/settingsPage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+        <LinearLayout android:id="@+id/settingsPage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:background="@color/settings_surface">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp" android:background="#E8F4F3">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_title" android:textSize="18sp" android:textStyle="bold" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_mode_hint" />
-                <TextView android:id="@+id/terminalSettingsCurrent" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_no_reading" android:textIsSelectable="true" />
-                <TextView android:id="@+id/terminalSettingsStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_disconnected" android:textIsSelectable="true" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_title" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/settings_text_primary" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_mode_hint" android:textColor="@color/settings_text_primary" />
+                <TextView android:id="@+id/terminalSettingsCurrent" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_no_reading" android:textIsSelectable="true" android:textColor="@color/settings_text_primary" android:textStyle="bold" />
+                <TextView android:id="@+id/terminalSettingsStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_disconnected" android:textIsSelectable="true" android:textColor="@color/settings_text_primary" />
                 <Button android:id="@+id/terminalSettingsQuery" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_query" />
                 <LinearLayout android:id="@+id/modeButtons" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                    <Button android:id="@+id/mode0Button" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/mode0" android:layout_weight="1" style="?android:attr/buttonBarButtonStyle" />
-                    <Button android:id="@+id/mode1Button" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/mode1" android:layout_weight="1" style="?android:attr/buttonBarButtonStyle" />
+                    <Button android:id="@+id/mode0Button" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/mode0" android:layout_weight="1" style="?android:attr/buttonBarButtonStyle" android:textColor="@color/settings_text_primary" android:backgroundTint="@color/settings_mode_background" />
+                    <Button android:id="@+id/mode1Button" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/mode1" android:layout_weight="1" style="?android:attr/buttonBarButtonStyle" android:textColor="@color/settings_text_primary" android:backgroundTint="@color/settings_mode_background" />
                 </LinearLayout>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_host" android:labelFor="@id/serverHostEdit" />
-                <EditText android:id="@+id/serverHostEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_host" android:inputType="textUri" android:singleLine="true" android:importantForAutofill="no" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_remote" android:labelFor="@id/serverRemotePortEdit" />
-                <EditText android:id="@+id/serverRemotePortEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_remote" android:inputType="number" android:singleLine="true" android:importantForAutofill="no" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_local" android:labelFor="@id/serverLocalPortEdit" />
-                <EditText android:id="@+id/serverLocalPortEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_local" android:inputType="number" android:singleLine="true" android:importantForAutofill="no" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_host" android:labelFor="@id/serverHostEdit" android:textColor="@color/settings_text_primary" />
+                <EditText android:id="@+id/serverHostEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_host" android:inputType="textUri" android:singleLine="true" android:importantForAutofill="no" android:textColor="@color/settings_text_primary" android:textColorHint="@color/settings_text_hint" android:backgroundTint="@color/settings_text_hint" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_remote" android:labelFor="@id/serverRemotePortEdit" android:textColor="@color/settings_text_primary" />
+                <EditText android:id="@+id/serverRemotePortEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_remote" android:inputType="number" android:singleLine="true" android:importantForAutofill="no" android:textColor="@color/settings_text_primary" android:textColorHint="@color/settings_text_hint" android:backgroundTint="@color/settings_text_hint" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_local" android:labelFor="@id/serverLocalPortEdit" android:textColor="@color/settings_text_primary" />
+                <EditText android:id="@+id/serverLocalPortEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/settings_local" android:inputType="number" android:singleLine="true" android:importantForAutofill="no" android:textColor="@color/settings_text_primary" android:textColorHint="@color/settings_text_hint" android:backgroundTint="@color/settings_text_hint" />
                 <Button android:id="@+id/terminalSettingsSave" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_save" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_network_hint" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_network_hint" android:textColor="@color/settings_text_primary" />
             </LinearLayout>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="vertical" android:background="#EDF1FA" android:padding="12dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_title" android:textStyle="bold" android:textSize="18sp" />
-                <TextView android:id="@+id/btNameStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_disconnected" />
-                <TextView android:id="@+id/btNameValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" />
-                <TextView android:id="@+id/btIdentityValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" />
-                <EditText android:id="@+id/btNameEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/bt_name_validation" android:inputType="textVisiblePassword" android:singleLine="true" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_title" android:textStyle="bold" android:textSize="18sp" android:textColor="@color/settings_text_primary" />
+                <TextView android:id="@+id/btNameStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_disconnected" android:textColor="@color/settings_text_primary" />
+                <TextView android:id="@+id/btNameValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" android:textColor="@color/settings_text_primary" />
+                <TextView android:id="@+id/btIdentityValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" android:textColor="@color/settings_text_primary" />
+                <EditText android:id="@+id/btNameEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/bt_name_validation" android:inputType="textVisiblePassword" android:singleLine="true" android:textColor="@color/settings_text_primary" android:textColorHint="@color/settings_text_hint" android:backgroundTint="@color/settings_text_hint" />
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
                     <Button android:id="@+id/btNameQueryButton" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/bt_name_query" />
                     <Button android:id="@+id/btNameSetButton" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/bt_name_set" />
@@ -83,7 +82,7 @@
                     <Button android:id="@+id/btNameAutoButton" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/bt_name_auto" />
                     <Button android:id="@+id/btNameRefreshButton" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/bt_name_refresh" />
                 </LinearLayout>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_hint" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_hint" android:textColor="@color/settings_text_primary" />
             </LinearLayout>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                 <Spinner android:id="@+id/baudSpinner" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" />

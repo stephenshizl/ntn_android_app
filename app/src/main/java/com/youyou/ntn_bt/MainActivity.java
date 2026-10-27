@@ -162,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         }
 
         baudSpinner.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.settings_spinner_item,
                 new String[]{"9600", "19200", "38400", "57600", "115200"}));
         baudSpinner.setSelection(4);
         bindActions();

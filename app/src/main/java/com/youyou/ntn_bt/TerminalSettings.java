@@ -1,6 +1,11 @@
 package com.youyou.ntn_bt;
 
 import android.os.SystemClock;
+import android.graphics.Typeface;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Spinner;
@@ -35,6 +40,28 @@ final class TerminalSettings {
         activity.findViewById(R.id.terminalSettingsSave).setOnClickListener(v -> save());
         activity.findViewById(R.id.mode0Button).setOnClickListener(v -> setMode(0));
         activity.findViewById(R.id.mode1Button).setOnClickListener(v -> setMode(1));
+        renderModeButtons();
+    }
+    private CharSequence highlightedMode(String text, String label, int value) {
+        SpannableString result = new SpannableString(text);
+        int labelStart = text.indexOf(label);
+        int numberOffset = label.lastIndexOf(String.valueOf(value));
+        if (labelStart >= 0 && numberOffset >= 0) {
+            int start = labelStart + numberOffset;
+            result.setSpan(new ForegroundColorSpan(activity.getColor(R.color.settings_mode_selected)),
+                    start, start + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            result.setSpan(new StyleSpan(Typeface.BOLD), start, start + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return result;
+    }
+    private void renderModeButtons() {
+        for (int value = 0; value <= 1; value++) {
+            TextView button = activity.findViewById(value == 0 ? R.id.mode0Button : R.id.mode1Button);
+            String label = activity.getString(value == 0 ? R.string.mode0 : R.string.mode1);
+            boolean selected = mode == value;
+            button.setSelected(selected);
+            button.setText(selected ? highlightedMode(label, label, value) : label);
+        }
     }
     private void controls(boolean enabled) {
         for (int id : new int[]{R.id.terminalSettingsQuery, R.id.terminalSettingsSave,
@@ -43,6 +70,7 @@ final class TerminalSettings {
     void disconnected() {
         pending = 0; queue.clear(); controls(true); loaded = false;
         mode = -1; actualHost = ""; expectedHost = null; expectedMode = -1;
+        renderModeButtons();
         current.setText(R.string.settings_no_reading);
         status.setText(R.string.bt_name_disconnected);
     }
@@ -110,18 +138,18 @@ final class TerminalSettings {
         try {
             if (command.equals(READ[0])) {
                 mode = json(text, "+MCUMODE:").getInt("effective"); receivedMode = true;
+                renderModeButtons();
             } else if (command.equals(READ[1])) {
                 actualHost = json(text, "+MCUHOST:").getString("host"); receivedHost = true;
             } else if (command.equals(READ[2])) {
                 JSONObject ports = json(text, "+MCUPORT:");
                 remotePort = ports.getInt("remote"); localPort = ports.getInt("local"); receivedPorts = true;
                 host.setText(actualHost); remote.setText(remotePort == 0 ? "" : String.valueOf(remotePort)); local.setText(String.valueOf(localPort));
-                current.setText(activity.getString(R.string.settings_current,
-                        activity.getString(mode == 0 ? R.string.mode0_name : R.string.mode1_name),
-                        actualHost.isEmpty() ? "—" : actualHost, remotePort, localPort));
-                if (actualHost.isEmpty() || remotePort == 0)
-                    current.setText(activity.getString(R.string.settings_unconfigured,
-                            activity.getString(mode == 0 ? R.string.mode0_name : R.string.mode1_name)));
+                String modeName = activity.getString(mode == 0 ? R.string.mode0_name : R.string.mode1_name);
+                String summary = actualHost.isEmpty() || remotePort == 0
+                        ? activity.getString(R.string.settings_unconfigured, modeName)
+                        : activity.getString(R.string.settings_current, modeName, actualHost, remotePort, localPort);
+                current.setText(highlightedMode(summary, modeName, mode));
             } else if (command.equals(READ[3])) {
                 String baud = String.valueOf(json(text, "+MCURS232:").getInt("effective_baud"));
                 Spinner rates = activity.findViewById(R.id.baudSpinner);
