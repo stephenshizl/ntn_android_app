@@ -37,7 +37,11 @@ public final class OtaUpdateService extends Service implements BleOtaController.
     private PowerManager.WakeLock wakeLock;
     BluetoothFirmwareFile firmware;
     String message, deviceInfo = "", selectedAddress = "";
-    boolean active, importing, ready;
+    boolean active, importing, ready, recoveryLoader;
+    String bluetoothVersion = "";
+    private void clearDeviceInfo() {
+        bluetoothVersion = ""; recoveryLoader = false; deviceInfo = "";
+    }
     int progress;
     private final Runnable deadline = () -> {
         if (!active) return;
@@ -64,12 +68,12 @@ public final class OtaUpdateService extends Service implements BleOtaController.
     }
     void connect(BluetoothDevice device) {
         if (active || device == null) return;
-        selectedAddress = device.getAddress(); deviceInfo = ""; ready = false; changed();
+        selectedAddress = device.getAddress(); clearDeviceInfo(); ready = false; changed();
         try { controller().connect(device); } catch (RuntimeException failure) { status(R.string.ota_protocol_error, failure.getMessage()); }
     }
     void disconnect() {
         if (active) return;
-        ready = false;
+        ready = false; clearDeviceInfo();
         if (controller != null) controller.disconnect();
         changed();
     }
@@ -117,7 +121,7 @@ public final class OtaUpdateService extends Service implements BleOtaController.
             if (!active) { startForeground(NOTIFICATION, notification()); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
             return START_NOT_STICKY;
         }
-        active = true; progress = 0;
+        active = true; progress = 0; clearDeviceInfo();
         message = getString(R.string.ota_checking_file);
         startForeground(NOTIFICATION, notification());
         wakeLock = getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NTN:BluetoothOTA");
@@ -149,14 +153,27 @@ public final class OtaUpdateService extends Service implements BleOtaController.
     }
     @Override public void status(int resource, String detail) {
         if (controller == null || !controller.isReady()) ready = false;
+        if (!ready || active) clearDeviceInfo();
         message = getString(resource) + (detail == null || detail.isEmpty() ? "" : "\n" + detail);
         changed();
         if (active) getSystemService(NotificationManager.class).notify(NOTIFICATION, notification());
     }
     @Override public void ready(TargetInfoResponse info) {
         ready = true;
-        deviceInfo = getString(R.string.ota_device_info, selectedAddress, info.getVersionName(), info.getVid(), info.getPid());
-        status(R.string.ota_ready, "");
+        clearDeviceInfo();
+        recoveryLoader = info.isMandatoryUpgrade();
+        if (recoveryLoader) {
+            BluetoothDevice loader = controller == null ? null : controller.device();
+            deviceInfo = getString(R.string.ota_loader_device_info,
+                    loader == null ? selectedAddress : loader.getAddress());
+            status(R.string.ota_loader_ready, "");
+        } else {
+            String version = info.getVersionName();
+            bluetoothVersion = version == null || version.trim().isEmpty()
+                    ? getString(R.string.bt_firmware_unknown) : version.trim();
+            deviceInfo = getString(R.string.ota_device_info, selectedAddress, bluetoothVersion, info.getVid(), info.getPid());
+            status(R.string.ota_ready, "");
+        }
     }
     @Override public void progress(int type, float value) {
         progress = Math.max(0, Math.min(100, Math.round(value)));
@@ -165,7 +182,7 @@ public final class OtaUpdateService extends Service implements BleOtaController.
         if (active) getSystemService(NotificationManager.class).notify(NOTIFICATION, notification());
     }
     @Override public void finished(boolean success, String detail) {
-        active = false; ready = false;
+        active = false; ready = false; clearDeviceInfo();
         if (controller != null) { controller.close(); controller = null; }
         main.removeCallbacks(deadline);
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();

@@ -6,6 +6,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Intent;
+import android.content.ComponentName;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -51,6 +54,21 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private final AtomicInteger nextRequestId = new AtomicInteger(1);
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSppClient sppClient;
+    private OtaUpdateService otaService;
+    private boolean otaBound;
+    private final OtaUpdateService.Observer otaObserver = this::renderBluetoothVersion;
+    private final ServiceConnection otaConnection = new ServiceConnection() {
+        @Override public void onServiceConnected(ComponentName name, IBinder binder) {
+            otaService = ((OtaUpdateService.LocalBinder) binder).service();
+            if (gnssForeground) otaService.observe(otaObserver);
+            queryConnectedBluetoothVersion();
+            renderBluetoothVersion();
+        }
+        @Override public void onServiceDisconnected(ComponentName name) {
+            otaService = null;
+            renderBluetoothVersion();
+        }
+    };
     private Spinner deviceSpinner;
     private Spinner baudSpinner;
     private TextView statusText;
@@ -59,6 +77,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private EditText ntnCommandEdit;
     private ScrollView logScroll;
     private String connectedMac;
+    private TerminalSettings terminalSettings;
+    private int pendingNtn;
+    private long ntnStarted;
+    private final StringBuilder ntnResponse = new StringBuilder();
     private int pendingName, pendingIdentity;
     private long nameQueryAt;
     private boolean namePoll;
@@ -98,6 +120,11 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             }
             if (gnssConnected && namePoll && pendingName==0 && now-nameQueryAt>=2000L)
                 sendLocal("AT+MCUBTNAME?");
+            if (terminalSettings != null) terminalSettings.tick();
+            if (pendingNtn != 0 && now - ntnStarted >= 65000L) {
+                pendingNtn = 0;
+                gpsText(R.id.ntnResultText, getString(R.string.ntn_error_timeout));
+            }
             renderGnss();
             if (gnssForeground) gnssHandler.postDelayed(this, 1000L);
         }
@@ -139,6 +166,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 new String[]{"9600", "19200", "38400", "57600", "115200"}));
         baudSpinner.setSelection(4);
         bindActions();
+        terminalSettings = new TerminalSettings(this, command -> sendCommand(Ctrl2Codec.TYPE_LOCAL_REQUEST, command));
         ensureBluetoothPermission();
         renderGnss();
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_NAME_CHANGED);
@@ -153,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             if (sppClient != null) {
                 sppClient.disconnect();
             }
+            if (otaService != null) otaService.disconnect();
         });
         findViewById(R.id.bluetoothSettingsButton).setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)));
@@ -179,8 +208,11 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         findViewById(R.id.gnssButton).setOnClickListener(v -> refreshTerminalGnss());
         findViewById(R.id.gnssRefreshButton).setOnClickListener(v -> refreshTerminalGnss());
         findViewById(R.id.timeButton).setOnClickListener(v -> sendLocal("AT+MCUTIME?"));
-        findViewById(R.id.mode0Button).setOnClickListener(v -> sendLocal("AT+MCUMODE=0"));
-        findViewById(R.id.mode1Button).setOnClickListener(v -> sendLocal("AT+MCUMODE=1"));
+        findViewById(R.id.terminalPageButton).setOnClickListener(v -> showPage(false));
+        findViewById(R.id.settingsPageButton).setOnClickListener(v -> {
+            showPage(true);
+            if (sppClient != null && sppClient.isConnected()) terminalSettings.ensureRead();
+        });
         findViewById(R.id.setBaudButton).setOnClickListener(v ->
                 sendLocal("AT+MCURS232=" + baudSpinner.getSelectedItem()));
         findViewById(R.id.sendLocalButton).setOnClickListener(v ->
@@ -261,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             return;
         }
         connectedMac=pairedDevices.get(position).getAddress();
+        if (otaService != null && !connectedMac.equals(otaService.selectedAddress)) otaService.disconnect();
         sppClient.connect(pairedDevices.get(position));
     }
 
@@ -277,12 +310,25 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             appendLog(getString(R.string.bt_not_connected));
             return 0;
         }
-        String clean = command == null ? "" : command.trim();
-        if (clean.isEmpty()) {
-            appendLog(getString(R.string.command_empty));
-            return 0;
+        if (command == null || command.trim().isEmpty()) {
+            appendLog(getString(R.string.command_empty)); return 0;
+        }
+        String clean;
+        try { clean = AtCommand.normalize(command); }
+        catch (IllegalArgumentException invalid) {
+            appendLog(getString(R.string.at_invalid)); return 0;
+        }
+        if (type == Ctrl2Codec.TYPE_NTN_REQUEST && clean.startsWith("AT+MCU")) {
+            appendLog(getString(R.string.at_wrong_target)); return 0;
+        }
+        if (type == Ctrl2Codec.TYPE_NTN_REQUEST && pendingNtn != 0) {
+            appendLog(getString(R.string.ntn_error_busy)); return 0;
         }
         int requestId = allocateRequestId();
+        if (type == Ctrl2Codec.TYPE_NTN_REQUEST) {
+            pendingNtn = requestId; ntnStarted = SystemClock.elapsedRealtime();
+            ntnResponse.setLength(0); gpsText(R.id.ntnResultText, getString(R.string.gnss_querying));
+        }
         long now = SystemClock.elapsedRealtime();
         if (type==Ctrl2Codec.TYPE_LOCAL_REQUEST && (clean.startsWith("AT+MCUBTNAME") || clean.equals("AT+MCUBTREFRESH"))) {
             pendingName=requestId;nameQueryAt=now;
@@ -322,11 +368,17 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             if (!connected) {
                 gnssEpoch++; pendingGnss = pendingTime = pendingName = pendingIdentity = 0;
                 namePoll=false;
+                pendingNtn = 0; ntnResponse.setLength(0);
+                gpsText(R.id.ntnResultText, getString(R.string.bt_not_connected));
+                terminalSettings.disconnected();
+                if (otaService != null) otaService.disconnect();
                 gpsText(R.id.btNameStatus,getString(R.string.bt_name_disconnected));
                 gpsText(R.id.btNameValue,"");gpsText(R.id.btIdentityValue,"");
                 gnssReading = null; timeReading = null; gnssWallTime = 0;
                 gnssFailed = timeFailed = timeAfterGnss = false;
             } else if (gnssForeground) {
+                queryConnectedBluetoothVersion();
+                terminalSettings.ensureRead();
                 refreshTerminalGnss();sendLocal("AT+MCUBTNAME?");sendLocal("AT+MCUBTIDENT?");
             }
             renderGnss();
@@ -343,7 +395,9 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                     typeName(frame.type), frame.requestId, frame.payload.length, text));
             if (frame.type == Ctrl2Codec.TYPE_LOCAL_FINAL) {
                 consumeGnss(frame.requestId, text);consumeName(frame.requestId,text);
+                terminalSettings.consume(frame.requestId, text);
             }
+            consumeNtn(frame.requestId, frame.type, text);
         });
     }
 
@@ -368,6 +422,36 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 return "LOCAL_PENDING";
             default:
                 return String.format(Locale.US, "TYPE_0x%02X", type);
+        }
+    }
+
+    private void showPage(boolean settings) {
+        findViewById(R.id.terminalPage).setVisibility(settings ? View.GONE : View.VISIBLE);
+        findViewById(R.id.settingsPage).setVisibility(settings ? View.VISIBLE : View.GONE);
+        findViewById(R.id.terminalPageButton).setEnabled(settings);
+        findViewById(R.id.settingsPageButton).setEnabled(!settings);
+    }
+
+    private void consumeNtn(int request, int type, String text) {
+        if (pendingNtn == 0 || pendingNtn != request) return;
+        if (type == Ctrl2Codec.TYPE_NTN_FRAGMENT) {
+            int room = 8192 - ntnResponse.length();
+            if (room > 0) ntnResponse.append(text, 0, Math.min(room, text.length()));
+            gpsText(R.id.ntnResultText, ntnResponse.toString().trim());
+        } else if (type == Ctrl2Codec.TYPE_NTN_FINAL) {
+            pendingNtn = 0;
+            int result = R.string.ntn_error_module;
+            try {
+                JSONObject value = new JSONObject(text);
+                if (value.getBoolean("ok")) result = R.string.ntn_result_ok;
+                else {
+                    int error = value.optInt("error", 4);
+                    if (error == 1) result = R.string.ntn_error_invalid;
+                    else if (error == 6) result = R.string.ntn_error_busy;
+                    else if (error == 12) result = R.string.ntn_error_timeout;
+                }
+            } catch (Exception invalid) { /* Raw final response remains in the log. */ }
+            gpsText(R.id.ntnResultText, getString(result) + "\n" + ntnResponse.toString().trim());
         }
     }
 
@@ -493,8 +577,41 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                         .format(new Date(gnssWallTime)) : "—"));
     }
 
+    @SuppressLint("MissingPermission")
+    private void queryConnectedBluetoothVersion() {
+        if (!gnssForeground || otaService == null || otaService.active || !hasConnectPermission()
+                || sppClient == null || !sppClient.isConnected() || connectedMac == null) return;
+        if (!otaService.ready || !connectedMac.equals(otaService.selectedAddress))
+            otaService.connect(bluetoothAdapter.getRemoteDevice(connectedMac));
+    }
+
+    private void renderBluetoothVersion() {
+        String value = getString(R.string.bt_firmware_disconnected);
+        if (otaService != null) {
+            if (otaService.active) value = getString(R.string.bt_firmware_updating);
+            else if (otaService.ready && otaService.recoveryLoader)
+                value = getString(R.string.ota_loader_device_info, otaService.selectedAddress);
+            else if (otaService.ready)
+                value = getString(R.string.bt_firmware_value, otaService.bluetoothVersion, otaService.selectedAddress);
+        }
+        gpsText(R.id.btFirmwareVersion, value);
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        if (!otaBound) otaBound = bindService(new Intent(this, OtaUpdateService.class), otaConnection, BIND_AUTO_CREATE);
+    }
+
+    @Override protected void onStop() {
+        if (otaService != null) otaService.unobserve(otaObserver);
+        super.onStop();
+    }
+
     @Override protected void onResume() {
         super.onResume(); gnssForeground = true;
+        if (otaService != null) otaService.observe(otaObserver);
+        queryConnectedBluetoothVersion();
+        renderBluetoothVersion();
         gnssHandler.removeCallbacks(gnssTick); gnssHandler.post(gnssTick);
     }
     @Override protected void onPause() {
@@ -505,6 +622,9 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     protected void onDestroy() {
         gnssForeground = false; gnssHandler.removeCallbacksAndMessages(null);
         unregisterReceiver(nameReceiver);
+        if (otaService != null) otaService.unobserve(otaObserver);
+        if (otaBound) unbindService(otaConnection);
+        otaBound = false; otaService = null;
         if (sppClient != null) {
             sppClient.close();
         }

@@ -56,18 +56,26 @@ final class BleOtaController {
                 .setUseReconnect(false).setNeedChangeMtu(false).setMtu(23).setTimeoutMs(5000));
         manager.registerBluetoothCallback(new BtEventCallback() {
             @Override public void onConnection(BluetoothDevice device, int status) {
+                main.post(() -> { if (status == StateCode.CONNECTION_OK) protocolReady(device); });
+            }
+            @Override public void onMandatoryUpgrade(BluetoothDevice device) {
+                // Single-bank loader sessions use this callback instead of onConnection.
                 main.post(() -> {
-                    if (closed || connected == null || !connected.getAddress().equals(device.getAddress())) return;
-                    if (status == StateCode.CONNECTION_OK) {
-                        TargetInfoResponse info = manager.getDeviceInfo();
-                        if (info != null) { ready = true; listener.ready(info); }
-                    }
+                    android.util.Log.i("NtnOta", "Authenticated mandatory recovery loader");
+                    protocolReady(device);
                 });
             }
             @Override public void onError(BaseError error) {
                 main.post(() -> { if (!closed && !updating) listener.status(R.string.ota_protocol_error, error.toString()); });
             }
         });
+    }
+
+    private void protocolReady(BluetoothDevice device) {
+        if (closed || device == null || connected == null
+                || !connected.getAddress().equals(device.getAddress())) return;
+        TargetInfoResponse info = manager.getDeviceInfo();
+        if (info != null) { ready = true; listener.ready(info); }
     }
 
     boolean isReady() { return ready && gatt != null; }
@@ -156,7 +164,8 @@ final class BleOtaController {
                 manager.onBtDeviceConnection(current.getDevice(), StateCode.CONNECTION_OK);
                 listener.status(R.string.ota_authenticating, current.getDevice().getAddress());
                 int token = generation;
-                main.postDelayed(() -> { if (!closed && token == generation && !ready) transportFailure(R.string.ota_protocol_error); }, 20000);
+                main.postDelayed(() -> { if (!closed && token == generation && !ready && !updating)
+                    transportFailure(R.string.ota_protocol_error); }, 20000);
             });
         }
         @Override public void onCharacteristicChanged(BluetoothGatt current, BluetoothGattCharacteristic characteristic) {
