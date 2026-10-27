@@ -46,6 +46,7 @@ final class TerminalSettings {
         current.setText(R.string.settings_no_reading);
         status.setText(R.string.bt_name_disconnected);
     }
+    boolean isBusy() { return pending != 0; }
     void ensureRead() { if (!loaded && pending == 0) read(); }
     void read() {
         if (pending != 0) return;

@@ -175,6 +175,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     }
 
     private void bindActions() {
+        findViewById(R.id.languageButton).setOnClickListener(v -> chooseLanguage());
+        findViewById(R.id.userGuideButton).setOnClickListener(v -> startActivity(new Intent(this, UserGuideActivity.class)));
         findViewById(R.id.refreshButton).setOnClickListener(v -> ensureBluetoothPermission());
         findViewById(R.id.connectButton).setOnClickListener(v -> connectSelected());
         findViewById(R.id.disconnectButton).setOnClickListener(v -> {
@@ -423,6 +425,22 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             default:
                 return String.format(Locale.US, "TYPE_0x%02X", type);
         }
+    }
+
+    private void chooseLanguage() {
+        if ((otaService != null && otaService.active) || pendingNtn != 0
+                || (terminalSettings != null && terminalSettings.isBusy())) {
+            new androidx.appcompat.app.AlertDialog.Builder(this).setMessage(R.string.language_busy)
+                    .setPositiveButton(android.R.string.ok, null).show(); return;
+        }
+        String[] labels = AppLanguage.NAMES.clone(); labels[0] = getString(R.string.language_system);
+        int selected = AppLanguage.index(androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags());
+        new androidx.appcompat.app.AlertDialog.Builder(this).setTitle(R.string.language_title)
+                .setSingleChoiceItems(labels, selected, (dialog, which) -> {
+                    dialog.dismiss();
+                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                            androidx.core.os.LocaleListCompat.forLanguageTags(AppLanguage.TAGS[which]));
+                }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
     private void showPage(boolean settings) {

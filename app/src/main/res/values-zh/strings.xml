@@ -152,4 +152,27 @@
     <string name="ntn_error_timeout">NTN响应超时（12），请检查模块供电与串口。</string>
     <string name="ntn_error_module">NTN模块返回错误（4），请查看下方模块响应。</string>
     <string name="settings_unconfigured">模式：%1$s\n尚未配置服务器，请在下方填写地址及服务器UDP端口。</string>
+    <string name="language_button">语言</string>
+    <string name="language_title">App语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_busy">请等待当前AT指令、设置保存或固件升级完成后再切换语言。</string>
+    <string name="guide_button">使用说明</string>
+    <string name="guide_title">用户使用说明</string>
+    <string name="guide_back">返回终端</string>
+    <string name="guide_connect_title">1. 配对与连接</string>
+    <string name="guide_connect">给终端上电，在安卓系统蓝牙设置中配对，再回到App刷新已配对列表并连接。多个设备名称相近时请按MAC地址识别；使用本手机前，先断开其他手机的连接。</string>
+    <string name="guide_test_title">2. 验证基本通信</string>
+    <string name="guide_test">先查询MCU版本与状态，再在NTN指令框输入ATI或AT，点击“发送NTN AT”，预期收到模块信息或OK，以及执行成功结果。AT+MCUVER?等MCU指令使用“发送MCU AT”入口。指令名称支持大小写，参数保留原样。</string>
+    <string name="guide_settings_title">3. 读取与保存配置</string>
+    <string name="guide_settings">进入“设置”，App优先读取MCU已保存的参数；服务器未配置时留空。填写实际服务器IPv4或域名，不带http://，服务器UDP端口为1–65535，本地UDP端口为0自动分配或1–65535。保存后等待回读核对成功；只填写输入框不代表已保存。再次读取会放弃尚未保存的输入。</string>
+    <string name="guide_mode_title">4. 选择工作模式</string>
+    <string name="guide_mode">透传模式（0）将RS232 AT指令转发至NTN；数据终端模式（1）把RS232数据打包，经NTN发送UDP。以终端回读的模式为准。实际UDP通信需要SIM卡、网络注册、有效的服务器参数和可达的服务器。</string>
+    <string name="guide_name_title">5. 识别设备与蓝牙改名</string>
+    <string name="guide_name">在“设置”中查询蓝牙名称及身份。手动名称支持1–31位ASCII字母、数字、下划线或连字符；AUTO使用可获得的终端或模块身份。DEFERRED表示已保存，断开蓝牙后生效；请按原MAC重连。安卓可能缓存旧名称。</string>
+    <string name="guide_gnss_title">6. 查看终端定位</string>
+    <string name="guide_gnss">GPS/GNSS来自终端。请接好终端GNSS天线并保持开阔天空，再刷新定位。未接天线时可能无定位、时间无效，不能把零坐标或过期数据当作有效位置。</string>
+    <string name="guide_ota_title">7. 蓝牙固件升级</string>
+    <string name="guide_ota">首页查看蓝牙版本。进入蓝牙升级页，扫描并按MAC连接正确设备，再选择蓝牙.ufw文件。确认目标和文件后开始，保持供电、蓝牙和App运行。完成后重新连接并读取版本。单备份升级中断时，连接恢复Loader，选择同一固件继续。MCU和NTN固件必须使用各自的升级工具。</string>
+    <string name="guide_errors_title">8. 常见错误与无SIM测试</string>
+    <string name="guide_errors">未连接：检查配对、供电、距离及其他手机是否占用。错误1：检查指令格式和MCU/NTN入口；错误6：等待通道空闲；错误12：超时后检查供电和串口；错误4：查看模块实际返回。无SIM可测MCU查询、模块基本AT、参数配置和蓝牙OTA；网络注册和卫星UDP送达仍需后续验证。</string>
 </resources>

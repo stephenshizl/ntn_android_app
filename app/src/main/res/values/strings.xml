@@ -152,4 +152,27 @@
     <string name="ntn_error_timeout">NTN response timed out (12). Check module power and UART.</string>
     <string name="ntn_error_module">NTN module returned an error (4). See the module response below.</string>
     <string name="settings_unconfigured">Mode: %1$s\nServer is not configured. Enter an address and remote UDP port below.</string>
+    <string name="language_button">Language</string>
+    <string name="language_title">App language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_busy">Wait for the current command, settings save or firmware update to finish before changing language.</string>
+    <string name="guide_button">Help</string>
+    <string name="guide_title">User guide</string>
+    <string name="guide_back">Back to terminal</string>
+    <string name="guide_connect_title">1. Pair and connect</string>
+    <string name="guide_connect">Power the terminal. Pair it in Android Bluetooth settings, then refresh the paired list in this app and connect. Check the MAC address when several devices have similar names. Disconnect another phone before using this one.</string>
+    <string name="guide_test_title">2. Check communication</string>
+    <string name="guide_test">Query the MCU version and status first. Enter ATI or AT in the NTN AT field and tap Send NTN AT; expect module information or OK and a successful final result. MCU commands such as AT+MCUVER? belong in Send MCU AT. Command names accept uppercase or lowercase; parameters retain their case.</string>
+    <string name="guide_settings_title">3. Read and save settings</string>
+    <string name="guide_settings">Open Settings. The app reads saved values from the MCU; an unconfigured server remains blank. Enter the real server IPv4 address or domain without http://, the remote UDP port (1–65535), and the local UDP port (0 for automatic). Save and wait for read-back confirmation. Typing a value alone does not save it. Read again to discard an unsaved draft.</string>
+    <string name="guide_mode_title">4. Choose the work mode</string>
+    <string name="guide_mode">Transparent mode (0) forwards RS232 AT commands to NTN. Data terminal mode (1) packetizes RS232 data and sends UDP through NTN. Confirm the mode returned by the terminal. SIM, network registration, server settings and a reachable server are required for actual UDP traffic.</string>
+    <string name="guide_name_title">5. Identify and rename a terminal</string>
+    <string name="guide_name">In Settings, query the Bluetooth name and identity. Manual names allow 1–31 ASCII letters, digits, underscore or hyphen. AUTO uses available terminal/module identity. A deferred name applies after Bluetooth disconnects; reconnect to the same MAC. Android may cache an older name.</string>
+    <string name="guide_gnss_title">6. Read terminal location</string>
+    <string name="guide_gnss">GPS/GNSS data comes from the terminal. Connect its GNSS antenna and provide a view of the sky, then refresh location. Without an antenna, no fix and invalid time can be expected; do not treat zero or expired coordinates as a valid location.</string>
+    <string name="guide_ota_title">7. Update Bluetooth firmware</string>
+    <string name="guide_ota">Read the Bluetooth version on the main screen. Open the Bluetooth updater, scan and connect to the correct MAC, then choose a Bluetooth .ufw file. Verify the target and file before starting. Keep power, Bluetooth and the app running. After completion, reconnect and read the version again. For an interrupted single-bank update, connect the recovery loader and select the same firmware. MCU and NTN files must use their own upgrade tools.</string>
+    <string name="guide_errors_title">8. Troubleshoot and test without a SIM</string>
+    <string name="guide_errors">Not connected: check pairing, power, range and whether another phone owns the connection. Error 1: check command syntax and MCU/NTN input. Error 6: wait for the busy channel. Error 12: check power and UART after a timeout. Error 4: read the module response. Without a SIM, test MCU queries, basic module AT, settings and Bluetooth OTA; network registration and satellite UDP delivery remain unverified.</string>
 </resources>
