@@ -176,4 +176,24 @@
     <string name="guide_ota">メイン画面でBluetoothバージョンを確認します。更新画面で検索し、MACで正しい機器に接続してBluetoothの.ufwファイルを選択してください。対象とファイルを確認してから開始し、電源、Bluetooth、アプリを維持してください。完了後は再接続してバージョンを確認します。単一バンク更新の中断時は復旧Loaderに接続し、同じファームウェアを選択します。MCUとNTNにはそれぞれの更新ツールを使用してください。</string>
     <string name="guide_errors_title">8. エラー対処とSIMなしのテスト</string>
     <string name="guide_errors">未接続の場合はペアリング、電源、距離、他のスマートフォンの接続を確認します。エラー1は構文とMCU/NTN入力先、6は通信中、12はタイムアウト後の電源とUART、4はモジュールの応答を確認してください。SIMなしではMCU照会、基本AT、設定、Bluetooth OTAをテストできます。ネットワーク登録と衛星UDP到達は未検証です。</string>
+    <string name="modem_status_title">NTN登録とSIM状態</string>
+    <string name="query_network">ネットワーク確認</string>
+    <string name="query_sim">SIM確認</string>
+    <string name="network_auto">ネットワークを5秒ごとに更新</string>
+    <string name="modem_status_hint">読み取り専用。通信中やバックグラウンドでは一時停止します。NOT READYだけではSIM未挿入と断定できません。</string>
+    <string name="modem_checked">更新時刻：%1$s</string>
+    <string name="net_not_registered">未登録</string>
+    <string name="net_home">登録済み（ホーム）</string>
+    <string name="net_searching">ネットワーク検索中</string>
+    <string name="net_denied">登録拒否</string>
+    <string name="net_unknown">登録状態不明</string>
+    <string name="net_roaming">登録済み（ローミング）</string>
+    <string name="sim_ready">SIM挿入済み・使用可能</string>
+    <string name="sim_pin">SIM挿入済み・PINが必要</string>
+    <string name="sim_puk">SIM挿入済み・PUKが必要</string>
+    <string name="sim_pin2">SIM挿入済み・PIN2が必要</string>
+    <string name="sim_puk2">SIM挿入済み・PUK2が必要</string>
+    <string name="sim_not_ready">SIM準備未完了（未挿入または使用不可）</string>
+    <string name="sim_absent">SIM未挿入</string>
+    <string name="sim_unknown">SIM状態不明</string>
 </resources>

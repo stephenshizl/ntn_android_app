@@ -175,4 +175,24 @@
     <string name="guide_ota">首页查看蓝牙版本。进入蓝牙升级页，扫描并按MAC连接正确设备，再选择蓝牙.ufw文件。确认目标和文件后开始，保持供电、蓝牙和App运行。完成后重新连接并读取版本。单备份升级中断时，连接恢复Loader，选择同一固件继续。MCU和NTN固件必须使用各自的升级工具。</string>
     <string name="guide_errors_title">8. 常见错误与无SIM测试</string>
     <string name="guide_errors">未连接：检查配对、供电、距离及其他手机是否占用。错误1：检查指令格式和MCU/NTN入口；错误6：等待通道空闲；错误12：超时后检查供电和串口；错误4：查看模块实际返回。无SIM可测MCU查询、模块基本AT、参数配置和蓝牙OTA；网络注册和卫星UDP送达仍需后续验证。</string>
+    <string name="modem_status_title">NTN入网与SIM状态</string>
+    <string name="query_network">查询入网状态</string>
+    <string name="query_sim">查询SIM状态</string>
+    <string name="network_auto">网络状态每5秒更新</string>
+    <string name="modem_status_hint">只读查询；通道忙或后台时暂停。NOT READY不能单独证明未插卡。</string>
+    <string name="modem_checked">更新于：%1$s</string>
+    <string name="net_not_registered">未入网</string>
+    <string name="net_home">已入网（本地）</string>
+    <string name="net_searching">正在搜网</string>
+    <string name="net_denied">入网被拒</string>
+    <string name="net_unknown">入网状态未知</string>
+    <string name="net_roaming">已入网（漫游）</string>
+    <string name="sim_ready">已插卡，SIM就绪</string>
+    <string name="sim_pin">已插卡，需要PIN</string>
+    <string name="sim_puk">已插卡，需要PUK</string>
+    <string name="sim_pin2">已插卡，需要PIN2</string>
+    <string name="sim_puk2">已插卡，需要PUK2</string>
+    <string name="sim_not_ready">SIM未就绪（未插卡或不可用）</string>
+    <string name="sim_absent">未插卡</string>
+    <string name="sim_unknown">SIM状态未知</string>
 </resources>

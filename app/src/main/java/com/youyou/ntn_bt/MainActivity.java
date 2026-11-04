@@ -79,6 +79,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private String connectedMac;
     private TerminalSettings terminalSettings;
     private int pendingNtn;
+    private CheckBox networkAutoRefresh;
+    private int modemStatusRequest;
+    private boolean modemStatusSim, terminalPageVisible = true;
+    private long networkCheckedAt;
     private long ntnStarted;
     private final StringBuilder ntnResponse = new StringBuilder();
     private int pendingName, pendingIdentity;
@@ -122,8 +126,15 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 sendLocal("AT+MCUBTNAME?");
             if (terminalSettings != null) terminalSettings.tick();
             if (pendingNtn != 0 && now - ntnStarted >= 65000L) {
+                if (modemStatusRequest == pendingNtn) finishModemStatus(false, R.string.ntn_error_timeout);
                 pendingNtn = 0;
                 gpsText(R.id.ntnResultText, getString(R.string.ntn_error_timeout));
+            }
+            if (ModemStatus.shouldRefresh(networkAutoRefresh.isChecked(), gnssConnected,
+                    gnssForeground, terminalPageVisible,
+                    pendingNtn == 0 && (terminalSettings == null || !terminalSettings.isBusy())
+                            && (otaService == null || !otaService.active), now, networkCheckedAt)) {
+                queryModemStatus(false);
             }
             renderGnss();
             if (gnssForeground) gnssHandler.postDelayed(this, 1000L);
@@ -150,6 +161,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         logText.setMovementMethod(new ScrollingMovementMethod());
         logScroll = findViewById(R.id.logScroll);
         gnssAutoRefresh = findViewById(R.id.gnssAutoRefresh);
+        networkAutoRefresh = findViewById(R.id.networkAutoRefresh);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         baudSpinner = findViewById(R.id.baudSpinner);
         localCommandEdit = findViewById(R.id.localCommandEdit);
@@ -207,6 +219,11 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         findViewById(R.id.btNameRefreshButton).setOnClickListener(v -> {sendLocal("AT+MCUBTREFRESH");sendLocal("AT+MCUBTIDENT?");});
         findViewById(R.id.versionButton).setOnClickListener(v -> sendLocal("AT+MCUVER?"));
         findViewById(R.id.statusButton).setOnClickListener(v -> sendLocal("AT+MCUSTAT?"));
+        findViewById(R.id.networkQueryButton).setOnClickListener(v -> queryModemStatus(false));
+        findViewById(R.id.simQueryButton).setOnClickListener(v -> queryModemStatus(true));
+        networkAutoRefresh.setOnCheckedChangeListener((button, checked) -> {
+            if (checked && gnssConnected && pendingNtn == 0) queryModemStatus(false);
+        });
         findViewById(R.id.gnssButton).setOnClickListener(v -> refreshTerminalGnss());
         findViewById(R.id.gnssRefreshButton).setOnClickListener(v -> refreshTerminalGnss());
         findViewById(R.id.timeButton).setOnClickListener(v -> sendLocal("AT+MCUTIME?"));
@@ -371,6 +388,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 gnssEpoch++; pendingGnss = pendingTime = pendingName = pendingIdentity = 0;
                 namePoll=false;
                 pendingNtn = 0; ntnResponse.setLength(0);
+                modemStatusRequest = 0; networkCheckedAt = 0;
+                networkAutoRefresh.setChecked(false);
+                gpsText(R.id.networkStatusText, getString(R.string.net_unknown));
+                gpsText(R.id.simStatusText, getString(R.string.sim_unknown));
                 gpsText(R.id.ntnResultText, getString(R.string.bt_not_connected));
                 terminalSettings.disconnected();
                 if (otaService != null) otaService.disconnect();
@@ -444,6 +465,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     }
 
     private void showPage(boolean settings) {
+        terminalPageVisible = !settings;
         findViewById(R.id.terminalPage).setVisibility(settings ? View.GONE : View.VISIBLE);
         findViewById(R.id.settingsPage).setVisibility(settings ? View.VISIBLE : View.GONE);
         findViewById(R.id.terminalPageButton).setEnabled(settings);
@@ -469,8 +491,37 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                     else if (error == 12) result = R.string.ntn_error_timeout;
                 }
             } catch (Exception invalid) { /* Raw final response remains in the log. */ }
+            if (modemStatusRequest == request) finishModemStatus(result == R.string.ntn_result_ok, result);
             gpsText(R.id.ntnResultText, getString(result) + "\n" + ntnResponse.toString().trim());
         }
+    }
+
+    private void queryModemStatus(boolean sim) {
+        if (pendingNtn != 0 || (terminalSettings != null && terminalSettings.isBusy())
+                || (otaService != null && otaService.active)) {
+            appendLog(getString(R.string.ntn_error_busy));
+            return;
+        }
+        networkCheckedAt = SystemClock.elapsedRealtime();
+        int request = sendCommand(Ctrl2Codec.TYPE_NTN_REQUEST, sim ? "AT+CPIN?" : "AT+CEREG?");
+        if (request == 0) {
+            gpsText(sim ? R.id.simStatusText : R.id.networkStatusText, getString(R.string.bt_not_connected));
+            return;
+        }
+        modemStatusRequest = request;
+        modemStatusSim = sim;
+        gpsText(sim ? R.id.simStatusText : R.id.networkStatusText, getString(R.string.gnss_querying));
+    }
+
+    private void finishModemStatus(boolean ok, int error) {
+        int label = error;
+        if (ok) label = modemStatusSim ? ModemStatus.simLabel(ModemStatus.sim(ntnResponse.toString()))
+                : ModemStatus.registrationLabel(ModemStatus.registration(ntnResponse.toString()));
+        String value = getString(label);
+        if (ok) value += "\n" + getString(R.string.modem_checked,
+                new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date()));
+        gpsText(modemStatusSim ? R.id.simStatusText : R.id.networkStatusText, value);
+        modemStatusRequest = 0;
     }
 
     private void appendLog(String message) {

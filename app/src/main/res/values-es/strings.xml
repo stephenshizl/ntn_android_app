@@ -176,4 +176,24 @@
     <string name="guide_ota">Lea la versión Bluetooth en la pantalla principal. Abra el actualizador, busque y conecte a la MAC correcta; seleccione un archivo Bluetooth .ufw. Confirme el destino y el archivo antes de iniciar. Mantenga la alimentación, Bluetooth y la app. Al terminar, reconecte y lea la versión. Si una actualización de banco único se interrumpe, conecte al cargador de recuperación y seleccione el mismo firmware. Use las herramientas propias para MCU y NTN.</string>
     <string name="guide_errors_title">8. Errores y pruebas sin SIM</string>
     <string name="guide_errors">Si no conecta, compruebe emparejamiento, alimentación, distancia y otros teléfonos. Error 1: sintaxis y destino MCU/NTN; 6: espere a que el canal quede libre; 12: compruebe alimentación y UART tras el tiempo agotado; 4: consulte la respuesta del módulo. Sin SIM puede probar consultas MCU, AT básicos, ajustes y OTA Bluetooth. El registro de red y la entrega UDP por satélite siguen sin verificarse.</string>
+    <string name="modem_status_title">Red NTN y SIM</string>
+    <string name="query_network">Consultar red</string>
+    <string name="query_sim">Consultar SIM</string>
+    <string name="network_auto">Actualizar red cada 5 segundos</string>
+    <string name="modem_status_hint">Consultas de solo lectura. Se pausan si el canal está ocupado o la app está en segundo plano. NOT READY no confirma que falte la SIM.</string>
+    <string name="modem_checked">Actualizado: %1$s</string>
+    <string name="net_not_registered">Sin registro</string>
+    <string name="net_home">Registrado (red local)</string>
+    <string name="net_searching">Buscando red</string>
+    <string name="net_denied">Registro rechazado</string>
+    <string name="net_unknown">Registro desconocido</string>
+    <string name="net_roaming">Registrado (itinerancia)</string>
+    <string name="sim_ready">SIM insertada y lista</string>
+    <string name="sim_pin">SIM insertada; requiere PIN</string>
+    <string name="sim_puk">SIM insertada; requiere PUK</string>
+    <string name="sim_pin2">SIM insertada; requiere PIN2</string>
+    <string name="sim_puk2">SIM insertada; requiere PUK2</string>
+    <string name="sim_not_ready">SIM no lista (ausente o no disponible)</string>
+    <string name="sim_absent">SIM ausente</string>
+    <string name="sim_unknown">Estado de SIM desconocido</string>
 </resources>

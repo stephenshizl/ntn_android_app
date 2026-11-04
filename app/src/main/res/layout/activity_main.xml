@@ -35,6 +35,17 @@
                 <CheckBox android:id="@+id/gnssAutoRefresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:checked="true" android:text="@string/gnss_auto" android:textColor="#12343B" />
                 <Button android:id="@+id/gnssRefreshButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/gnss_refresh" />
             </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="vertical" android:padding="12dp" android:background="#E8F4F3">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/modem_status_title" android:textSize="18sp" android:textStyle="bold" android:textColor="#12343B" />
+                <TextView android:id="@+id/networkStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/net_unknown" android:textColor="#12343B" android:textIsSelectable="true" />
+                <TextView android:id="@+id/simStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sim_unknown" android:textColor="#12343B" android:textIsSelectable="true" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <Button android:id="@+id/networkQueryButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/query_network" />
+                    <Button android:id="@+id/simQueryButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/query_sim" />
+                </LinearLayout>
+                <CheckBox android:id="@+id/networkAutoRefresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:checked="false" android:text="@string/network_auto" android:textColor="#12343B" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/modem_status_hint" android:textSize="12sp" android:textColor="#12343B" />
+            </LinearLayout>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/quick_queries" android:textStyle="bold" />
             <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:columnCount="2">
                 <Button android:id="@+id/versionButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:text="@string/query_version" />
