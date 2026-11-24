@@ -195,4 +195,17 @@
     <string name="sim_not_ready">SIM未就绪（未插卡或不可用）</string>
     <string name="sim_absent">未插卡</string>
     <string name="sim_unknown">SIM状态未知</string>
+    <string name="self_test_run">运行设备自检</string>
+    <string name="self_test_idle">尚未自检</string>
+    <string name="self_test_incomplete">自检未完成，请确认连接和固件支持。</string>
+    <string name="self_test_fault">检测到存储异常</string>
+    <string name="self_test_pass">存储检查通过</string>
+    <string name="self_test_available">可用</string>
+    <string name="self_test_unavailable">不可用</string>
+    <string name="self_test_nor_fault">初始化或分区异常</string>
+    <string name="self_test_saved">已加载保存配置</string>
+    <string name="self_test_defaults">未加载保存配置</string>
+    <string name="self_test_sn">SN：%1$s</string>
+    <string name="self_test_report">%1$s\nMAC：%2$s\n外置 NOR：%3$s\n离线存储：%4$s\n配置：%5$s\nGNSS：%6$s\nNTN 入网：%7$s</string>
+    <string name="self_test_ntn_error">NTN 最近错误码：%1$d</string>
 </resources>

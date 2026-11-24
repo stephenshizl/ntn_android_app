@@ -195,4 +195,17 @@
     <string name="sim_not_ready">SIM not ready (absent or unavailable)</string>
     <string name="sim_absent">SIM absent</string>
     <string name="sim_unknown">SIM status unknown</string>
+    <string name="self_test_run">Run device self-test</string>
+    <string name="self_test_idle">Self-test not run</string>
+    <string name="self_test_incomplete">Self-test incomplete. Check the connection and firmware support.</string>
+    <string name="self_test_fault">Storage issue detected</string>
+    <string name="self_test_pass">Storage checks passed</string>
+    <string name="self_test_available">Available</string>
+    <string name="self_test_unavailable">Unavailable</string>
+    <string name="self_test_nor_fault">Initialization or partition fault</string>
+    <string name="self_test_saved">Saved settings loaded</string>
+    <string name="self_test_defaults">Saved settings not loaded</string>
+    <string name="self_test_sn">SN: %1$s</string>
+    <string name="self_test_report">%1$s\nMAC: %2$s\nExternal NOR: %3$s\nOffline storage: %4$s\nConfiguration: %5$s\nGNSS: %6$s\nNTN registration: %7$s</string>
+    <string name="self_test_ntn_error">Last NTN error code: %1$d</string>
 </resources>

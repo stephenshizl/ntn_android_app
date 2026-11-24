@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private ScrollView logScroll;
     private String connectedMac;
     private TerminalSettings terminalSettings;
+    private int selfTestRequest;
+    private long selfTestStarted;
     private int pendingNtn;
     private CheckBox networkAutoRefresh;
     private int modemStatusRequest;
@@ -107,6 +109,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
     private final Runnable gnssTick = new Runnable() {
         @Override public void run() {
             long now = SystemClock.elapsedRealtime();
+            if (selfTestRequest != 0 && now - selfTestStarted >= GNSS_TIMEOUT_MS) {
+                selfTestRequest = 0;
+                gpsText(R.id.selfTestResult, getString(R.string.self_test_incomplete));
+            }
             if (pendingGnss != 0 && now - gnssStarted >= GNSS_TIMEOUT_MS) {
                 pendingGnss = 0; gnssFailed = true; timeAfterGnss = false;
                 lastRefreshAt = now;
@@ -219,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
         findViewById(R.id.btNameRefreshButton).setOnClickListener(v -> {sendLocal("AT+MCUBTREFRESH");sendLocal("AT+MCUBTIDENT?");});
         findViewById(R.id.versionButton).setOnClickListener(v -> sendLocal("AT+MCUVER?"));
         findViewById(R.id.statusButton).setOnClickListener(v -> sendLocal("AT+MCUSTAT?"));
+        findViewById(R.id.selfTestButton).setOnClickListener(v -> runSelfTest());
         findViewById(R.id.networkQueryButton).setOnClickListener(v -> queryModemStatus(false));
         findViewById(R.id.simQueryButton).setOnClickListener(v -> queryModemStatus(true));
         networkAutoRefresh.setOnCheckedChangeListener((button, checked) -> {
@@ -389,6 +396,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 namePoll=false;
                 pendingNtn = 0; ntnResponse.setLength(0);
                 modemStatusRequest = 0; networkCheckedAt = 0;
+                selfTestRequest = 0;
+                gpsText(R.id.selfTestResult, getString(R.string.self_test_idle));
                 networkAutoRefresh.setChecked(false);
                 gpsText(R.id.networkStatusText, getString(R.string.net_unknown));
                 gpsText(R.id.simStatusText, getString(R.string.sim_unknown));
@@ -417,11 +426,44 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
             appendLog(getString(R.string.log_rx,
                     typeName(frame.type), frame.requestId, frame.payload.length, text));
             if (frame.type == Ctrl2Codec.TYPE_LOCAL_FINAL) {
+                if (selfTestRequest != 0 && selfTestRequest == frame.requestId) consumeSelfTest(text);
                 consumeGnss(frame.requestId, text);consumeName(frame.requestId,text);
                 terminalSettings.consume(frame.requestId, text);
             }
             consumeNtn(frame.requestId, frame.type, text);
         });
+    }
+
+    private void runSelfTest() {
+        if (selfTestRequest != 0) return;
+        selfTestRequest = sendCommand(Ctrl2Codec.TYPE_LOCAL_REQUEST, "AT+MCUSELFTEST?");
+        selfTestStarted = SystemClock.elapsedRealtime();
+        gpsText(R.id.selfTestResult, getString(selfTestRequest == 0
+                ? R.string.bt_not_connected : R.string.gnss_querying));
+    }
+
+    private void consumeSelfTest(String text) {
+        selfTestRequest = 0;
+        try {
+            JSONObject data = new JSONObject(responseValue(text, "+MCUSELFTEST:"));
+            boolean norReady = data.getBoolean("nor_ready");
+            boolean queueReady = data.getBoolean("queue_ready");
+            String report = getString(R.string.self_test_report,
+                    getString(norReady && queueReady ? R.string.self_test_pass : R.string.self_test_fault),
+                    connectedMac == null ? "—" : connectedMac,
+                    getString(norReady ? R.string.self_test_available : R.string.self_test_nor_fault),
+                    getString(queueReady ? R.string.self_test_available : R.string.self_test_unavailable),
+                    getString(data.getBoolean("config_saved") ? R.string.self_test_saved : R.string.self_test_defaults),
+                    getString(data.getBoolean("gnss_valid") ? R.string.gnss_fixed : R.string.gnss_no_fix),
+                    getString(ModemStatus.registrationLabel(data.getInt("registered"))));
+            String sn = data.optString("sn");
+            int ntnError = data.optInt("ntn_error");
+            if (!sn.isEmpty()) report += "\n" + getString(R.string.self_test_sn, sn);
+            if (ntnError != 0) report += "\n" + getString(R.string.self_test_ntn_error, ntnError);
+            gpsText(R.id.selfTestResult, report);
+        } catch (org.json.JSONException | IllegalArgumentException invalid) {
+            gpsText(R.id.selfTestResult, getString(R.string.self_test_incomplete));
+        }
     }
 
     @Override

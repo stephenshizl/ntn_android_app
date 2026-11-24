@@ -46,6 +46,8 @@
                 <CheckBox android:id="@+id/networkAutoRefresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:checked="false" android:text="@string/network_auto" android:textColor="#12343B" />
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/modem_status_hint" android:textSize="12sp" android:textColor="#12343B" />
             </LinearLayout>
+            <Button android:id="@+id/selfTestButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/self_test_run" />
+            <TextView android:id="@+id/selfTestResult" android:layout_width="match_parent" android:layout_height="wrap_content" android:accessibilityLiveRegion="polite" android:textIsSelectable="true" android:text="@string/self_test_idle" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/quick_queries" android:textStyle="bold" />
             <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:columnCount="2">
                 <Button android:id="@+id/versionButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:text="@string/query_version" />
