@@ -366,6 +366,8 @@ public class MainActivity extends AppCompatActivity implements BluetoothSppClien
                 pendingGnss = requestId; gnssStarted = now; gnssReading = null; gnssFailed = false;
             } else if (clean.equalsIgnoreCase("AT+MCUTIME?")) {
                 pendingTime = requestId; timeStarted = now; timeReading = null; timeFailed = false;
+            } else if (clean.startsWith("AT+MCURS232=") || clean.startsWith("AT+MCUBAUD=")) {
+                terminalSettings.expectRs232Write(requestId);
             }
         }
         byte[] payload = (clean + "\r\n").getBytes(StandardCharsets.US_ASCII);

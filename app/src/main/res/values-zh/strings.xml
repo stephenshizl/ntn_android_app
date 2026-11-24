@@ -15,6 +15,10 @@
     <string name="mode0">透传模式（0）</string>
     <string name="mode1">数据终端模式（1）</string>
     <string name="set_baud">设置RS232波特率</string>
+    <string name="rs232_current_baud">当前 RS232 波特率 · %1$d bps</string>
+    <string name="rs232_baud_unknown">当前 RS232 波特率 · 未读取</string>
+    <string name="rs232_save_failed">MCU 保存 RS232 波特率失败（错误 3）。请用「设备自检」检查 Flash。</string>
+    <string name="settings_applied_volatile">已临时生效，仅本次上电有效。设置未保存到 Flash。</string>
     <string name="local_at_hint">MCU命令，例如 AT+MCUCAP?</string>
     <string name="send_mcu_at">发送 MCU AT</string>
     <string name="ntn_at_hint">MS150命令，例如 AT+CSQ</string>

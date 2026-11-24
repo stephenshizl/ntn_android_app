@@ -57,6 +57,7 @@
             </GridLayout>
             <EditText android:id="@+id/localCommandEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/local_at_hint" android:importantForAutofill="no" android:inputType="textNoSuggestions" android:singleLine="true" />
             <Button android:id="@+id/sendLocalButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/send_mcu_at" />
+            <TextView android:id="@+id/terminalRs232Baud" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/rs232_baud_unknown" android:accessibilityLiveRegion="polite" />
             <EditText android:id="@+id/ntnCommandEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/ntn_at_hint" android:importantForAutofill="no" android:inputType="textNoSuggestions" android:singleLine="true" />
             <Button android:id="@+id/sendNtnButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/send_ntn_at" />
             <TextView android:id="@+id/ntnResultText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" android:text="@string/ntn_result_idle" />
@@ -97,10 +98,12 @@
                 </LinearLayout>
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bt_name_hint" android:textColor="@color/settings_text_primary" />
             </LinearLayout>
+            <TextView android:id="@+id/settingsRs232Baud" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/rs232_baud_unknown" android:textColor="@color/settings_text_primary" android:accessibilityLiveRegion="polite" />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                 <Spinner android:id="@+id/baudSpinner" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" />
                 <Button android:id="@+id/setBaudButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_baud" />
             </LinearLayout>
+            <TextView android:id="@+id/rs232WriteStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/settings_text_primary" android:visibility="gone" android:accessibilityLiveRegion="polite" />
         </LinearLayout>
         <Button android:id="@+id/clearLogButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/clear_log" />
         <ScrollView android:id="@+id/logScroll" android:layout_width="match_parent" android:layout_height="240dp" android:nestedScrollingEnabled="true">

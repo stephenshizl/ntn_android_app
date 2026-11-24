@@ -16,6 +16,10 @@
     <string name="mode0">Modo transparente (0)</string>
     <string name="mode1">Modo de terminal de datos (1)</string>
     <string name="set_baud">Configurar velocidad RS232</string>
+    <string name="rs232_current_baud">Velocidad RS232 actual · %1$d bps</string>
+    <string name="rs232_baud_unknown">Velocidad RS232 actual · Sin lectura</string>
+    <string name="rs232_save_failed">El MCU no pudo guardar la velocidad RS232 (error 3). Comprueba la memoria flash con el autodiagnóstico.</string>
+    <string name="settings_applied_volatile">Ajuste temporal para esta sesión. No se guardó en la memoria flash.</string>
     <string name="local_at_hint">Comando MCU, por ejemplo AT+MCUCAP?</string>
     <string name="send_mcu_at">Enviar AT a MCU</string>
     <string name="ntn_at_hint">Comando MS150, por ejemplo AT+CSQ</string>

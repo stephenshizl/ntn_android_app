@@ -16,6 +16,10 @@
     <string name="mode0">透過モード（0）</string>
     <string name="mode1">データ端末モード（1）</string>
     <string name="set_baud">RS232ボーレートを設定</string>
+    <string name="rs232_current_baud">現在の RS232 ボーレート · %1$d bps</string>
+    <string name="rs232_baud_unknown">現在の RS232 ボーレート · 未取得</string>
+    <string name="rs232_save_failed">MCU で RS232 の設定を保存できませんでした（エラー 3）。端末の自己診断でフラッシュを確認してください。</string>
+    <string name="settings_applied_volatile">今回の起動中のみ有効です。設定はフラッシュに保存されていません。</string>
     <string name="local_at_hint">MCUコマンド（例：AT+MCUCAP?）</string>
     <string name="send_mcu_at">MCU ATを送信</string>
     <string name="ntn_at_hint">MS150コマンド（例：AT+CSQ）</string>

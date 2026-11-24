@@ -15,6 +15,10 @@
     <string name="mode0">Transparent mode (0)</string>
     <string name="mode1">Data terminal mode (1)</string>
     <string name="set_baud">Set RS232 baud rate</string>
+    <string name="rs232_current_baud">Current RS232 baud rate · %1$d bps</string>
+    <string name="rs232_baud_unknown">Current RS232 baud rate · Unknown</string>
+    <string name="rs232_save_failed">The MCU could not save the RS232 setting (error 3). Check flash with Device Self-Test.</string>
+    <string name="settings_applied_volatile">Applied for this session only. The setting was not saved to flash.</string>
     <string name="local_at_hint">MCU command, for example AT+MCUCAP?</string>
     <string name="send_mcu_at">Send MCU AT</string>
     <string name="ntn_at_hint">MS150 command, for example AT+CSQ</string>
